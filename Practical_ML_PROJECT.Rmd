@@ -1,0 +1,110 @@
+---
+title: "Practical Machine Learning Project"
+output:
+  html_document:
+    keep_md: yes
+  word_document: default
+  pdf_document: default
+---
+
+### By :-   Vimal Kushwaha
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction 
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Data
+
+The training data for this project are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har.
+
+## Data Preprocessing 
+Loading the required packages
+```{r}
+library(knitr)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(corrplot)
+library(rattle)
+library(tidyverse)
+library(dplyr)
+library(readr)
+library(e1071)
+```
+
+Loading the training and test dataset
+```{r}
+training.data<-read.csv("training.csv", na.strings=c("NA","#DIV/0!",""))
+
+testing.data<-read.csv("testing.csv", na.strings=c("NA","#DIV/0!",""))
+```
+
+Cleaning the data
+```{r}
+characteristics<-names(testing.data[,colSums(is.na(testing.data))==0])[8:59]
+training.data<-training.data[,c(characteristics,"classe")]
+testing.data<-testing.data[,c(characteristics,"problem_id")]
+dim(training.data)
+dim(testing.data)
+```
+
+
+## Partitioning the data
+```{r}
+set.seed(1578)
+partition<-createDataPartition(training.data$classe,p=0.6,list=FALSE)
+training_data<-training.data[partition,]
+testing_data<-training.data[-partition,]
+dim(training_data)
+dim(testing_data)
+```
+
+## Building the Decison Tree model
+```{r}
+model<-rpart(classe~.,data=training_data,method="class")
+fancyRpartPlot(model)
+```
+
+## Prediction using Decison tree model
+```{r}
+prediction<-predict(model,testing_data,type="class")
+confusionMatrix(prediction,testing_data$classe)
+```
+
+## Building the Random Forest Model
+```{r}
+model.RF<-randomForest(classe~.,data=training_data,ntree=1000)
+```
+
+## Prediction using Random Forest Model
+```{r}
+prediction.RF<-predict(model.RF,testing_data,type='class')
+confusionMatrix(prediction.RF,testing_data$classe)
+```
+
+## Prediction on testing data using decison tree model
+```{r}
+predict.test.DT<-predict(model,testing.data,type="class")
+predict.test.DT
+```
+
+## Prediction on testing data using random forest model
+```{r}
+predict.test.RF<-predict(model.RF,testing.data,type="class")
+predict.test.RF
+```
+
+## Conclusion 
+As the confusion matrix we got from the random forest is more accurate i.e. 99% as compared to decision tree model.Therefore we will consider the random forest model to answer the questions of the assignment.
